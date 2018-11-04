@@ -1,7 +1,7 @@
 Doorkeeper.configure do
   # Change the ORM that doorkeeper will use (needs plugins)
   orm :active_record
-
+  default_scopes :public
   # This block will be called to check whether the resource owner is authenticated or not.
   resource_owner_authenticator do
     # raise "Please configure doorkeeper resource_owner_authenticator block located in #{__FILE__}"
@@ -11,6 +11,19 @@ Doorkeeper.configure do
     current_user || warden.authenticate!(:scope => :user)
   end
 
+  admin_authenticator do
+    current_user || warden.authenticate!(:scope => :user)
+  end
+
+  resource_owner_from_credentials do |routes|
+    request.params[:user] = {:email => request.params[:username], :password => request.params[:password]}
+    request.env["warden"].logout(:user)
+    request.env["devise.allow_params_authentication"] = true
+    request.env["warden"].authenticate!(:scope => :user, :store => false)
+  end
+
+  access_token_methods :from_bearer_authorization, :from_basic_authorization
+  grant_flows %w[password]
   # If you didn't skip applications controller from Doorkeeper routes in your application routes.rb
   # file then you need to declare this block in order to restrict access to the web interface for
   # adding oauth authorized applications. In other case it will return 403 Forbidden response

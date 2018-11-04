@@ -8,6 +8,7 @@ Bundler.require(*Rails.groups)
 
 module ApiAuthWithOauth
   class Application < Rails::Application
+    config.public_file_server.enabled = true
     config.active_job.queue_adapter = :sidekiq
     config.application_name = Rails.application.class.parent_name
     # Initialize configuration defaults for originally generated Rails version.

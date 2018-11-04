@@ -2,6 +2,8 @@ version: '3'
 services:
   db:
     image: postgres
+    ports:
+      - "5432:5432"
     volumes:
       - ./tmp/db:/var/lib/postgresql/data
   redis:
@@ -13,7 +15,9 @@ services:
     restart: always
   webapp:
     build: .
-    command: bundle exec rails s -p 3000 -b '0.0.0.0'
+    command: bash -c "rm -f /api_auth_with_oauth/tmp/pids/server.pid; bundle exec rails s -p 3000 -b '0.0.0.0'"
+    environment:
+      - MYSQL_HOST=db
     volumes:
       - .:/api_auth_with_oauth
     ports:
@@ -22,15 +26,13 @@ services:
       - db
   worker:
     build: .
+    command: bundle exec sidekiq -C config/sidekiq.yml.erb
     environment:
       - REDIS_PROVIDER=redis://redis:6379/0
-    command: bundle exec sidekiq -C config/sidekiq.yml.erb
+      - MYSQL_HOST=db
     volumes:
       - .:/api_auth_with_oauth
     depends_on:
-      - db
-      - redis
-    links:
       - db
       - redis
   webpack:
